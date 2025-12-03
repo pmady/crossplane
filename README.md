@@ -33,7 +33,3 @@ If you're working on something interesting in the cloud-native or AI/ML space, I
 - Say hello if you just want to share thoughts and ideas
 
 **Let's build something great together!** 🚀
-
----
-
-![GitHub Stats](https://github-readme-stats.vercel.app/api?username=pmady&show_icons=true&theme=dark)
