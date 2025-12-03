@@ -7,6 +7,7 @@ This example demonstrates how to create an AWS EKS cluster with VPC, subnets, an
 This composition creates the following AWS resources:
 
 ### Networking
+
 - **VPC** - Virtual Private Cloud with DNS support
 - **Internet Gateway** - For public internet access
 - **NAT Gateway** - For private subnet outbound access
@@ -18,11 +19,13 @@ This composition creates the following AWS resources:
 - **Route Table Associations** - Linking subnets to route tables
 
 ### IAM
+
 - **EKS Cluster Role** - IAM role for EKS control plane
 - **EKS Node Role** - IAM role for worker nodes
 - **Policy Attachments** - Required AWS managed policies
 
 ### EKS
+
 - **EKS Cluster** - Kubernetes control plane
 - **EKS Node Group** - Managed worker nodes in private subnets
 
@@ -37,6 +40,7 @@ This composition creates the following AWS resources:
    ```
 
 3. **AWS Provider** installed and configured:
+
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: pkg.crossplane.io/v1
@@ -67,6 +71,7 @@ This composition creates the following AWS resources:
    ```
 
 4. **AWS ProviderConfig** with credentials:
+
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: aws.upbound.io/v1beta1

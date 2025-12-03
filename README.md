@@ -1,68 +1,85 @@
-# Hi there, I'm Pavan 👋
+# Crossplane Compositions
 
-## About Me
+A collection of **Crossplane 2.0** compositions for provisioning cloud infrastructure using Kubernetes-native APIs.
 
-I'm a DevOps/Platform Engineer passionate about cloud-native technologies and open source.
+[![Crossplane CI](https://github.com/pmady/crossplane/actions/workflows/crossplane-ci.yaml/badge.svg)](https://github.com/pmady/crossplane/actions/workflows/crossplane-ci.yaml)
 
-## 🏆 Certifications
+## Available Compositions
 
-**Kubestronaut** - Completed all 5 Kubernetes certifications:
+| Composition | Description | Cloud Provider |
+|-------------|-------------|----------------|
+| [crossplane-eks](./crossplane-eks/) | Complete EKS cluster with VPC, subnets, and networking | AWS |
 
-- KCNA (Kubernetes and Cloud Native Associate)
-- CKA (Certified Kubernetes Administrator)
-- CKAD (Certified Kubernetes Application Developer)
-- CKS (Certified Kubernetes Security Specialist)
-- KCSA (Kubernetes and Cloud Native Security Associate)
+## Features
 
-## ☁️ Cloud Platforms
+- **Crossplane 2.0** - Uses Pipeline mode with `function-patch-and-transform`
+- **Production-ready** - Includes VPC, public/private subnets, NAT Gateway, and proper IAM roles
+- **Configurable** - Parameterized for easy customization
+- **CI/CD Ready** - GitHub Actions workflow for testing and package publishing
 
-- **AWS** (Current)
-- **Azure** (Previous)
+## Quick Start
 
-## 🔧 Technologies & Tools
+### Prerequisites
 
-### Container Orchestration & GitOps
+- Kubernetes cluster with Crossplane 2.0+ installed
+- AWS credentials configured
 
-- **Kubernetes** - Container orchestration and cluster management
-- **ArgoCD** - GitOps continuous delivery
-- **Docker** - Containerization
-- **Crossplane** - Infrastructure as code using Kubernetes
+### Installation
 
-### Observability
+```bash
+# Install the function
+kubectl apply -f crossplane-eks/functions.yaml
 
-- **Prometheus** & **Grafana** - Metrics and visualization
-- **Splunk** - Log management and analytics
-- **Datadog** - Monitoring and APM
-- **OpenTelemetry** - Distributed tracing and observability
+# Apply XRD and Composition
+kubectl apply -f crossplane-eks/definition.yaml
+kubectl apply -f crossplane-eks/composition.yaml
 
-### Policy Management
+# Create an EKS cluster
+kubectl apply -f crossplane-eks/claim.yaml
+```
 
-- **Kyverno** - Kubernetes native policy management
-- **OPA (Open Policy Agent)** - Policy as code
+## Project Structure
 
-### CI/CD
+```text
+.
+├── .github/workflows/       # CI/CD pipelines
+│   └── crossplane-ci.yaml   # Build, test, and publish workflow
+├── crossplane-eks/          # EKS composition
+│   ├── definition.yaml      # XRD (CompositeResourceDefinition)
+│   ├── composition.yaml     # Composition with all resources
+│   ├── claim.yaml           # Example claim
+│   ├── functions.yaml       # Required Crossplane functions
+│   ├── crossplane.yaml      # Package configuration
+│   └── tests/               # Render tests
+└── README.md
+```
 
-- Experience with various CI/CD tools and pipelines
+## Testing
 
-## 🌱 Open Source Contributions
+### Local Testing
 
-I'm an active contributor to:
+```bash
+# Validate YAML schema
+./crossplane-eks/tests/validate-schema.sh
 
-- **[KEDA](https://github.com/kedacore/keda)** - Kubernetes Event-driven Autoscaling
-- **[RAWtoACES](https://github.com/AcademySoftwareFoundation/rawtoaces)** - RAW to ACES image conversion (Academy Software Foundation)
+# Run render tests
+./crossplane-eks/tests/validate-render.sh
+```
 
-Always looking to contribute to more **CNCF projects** in the future!
+### CI/CD Pipeline
 
-## 🤖 Interests
+The GitHub Actions workflow automatically:
 
-I'm particularly enthusiastic about the intersection of **AI and Kubernetes** - projects that bring machine learning workloads to cloud-native infrastructure.
+1. Validates YAML syntax and schema
+2. Runs `crossplane beta render` tests
+3. Builds the Crossplane package (`.xpkg`)
+4. Pushes to GitHub Container Registry (on main branch)
+5. Runs integration tests on Kind cluster (on PRs)
 
-## 💬 Let's Connect
+## Contributing
 
-If you're working on something interesting in the cloud-native or AI/ML space, I'd love to hear about it! Feel free to:
+Contributions are welcome! Please feel free to submit issues or pull requests.
 
-- Open an issue or discussion on any of my repos
-- Reach out if you want to collaborate on CNCF projects
-- Say hello if you just want to share thoughts and ideas
+## License
 
-**Let's build something great together!** 🚀
+Apache 2.0
