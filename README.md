@@ -4,6 +4,16 @@
 
 I'm a DevOps/Platform Engineer passionate about cloud-native technologies and open source.
 
+## 🏆 Certifications
+
+**Kubestronaut** - Completed all 5 Kubernetes certifications:
+
+- KCNA (Kubernetes and Cloud Native Associate)
+- CKA (Certified Kubernetes Administrator)
+- CKAD (Certified Kubernetes Application Developer)
+- CKS (Certified Kubernetes Security Specialist)
+- KCSA (Kubernetes and Cloud Native Security Associate)
+
 ## ☁️ Cloud Platforms
 
 - **AWS** (Current)
