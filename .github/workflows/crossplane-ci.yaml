@@ -1,0 +1,333 @@
+name: Crossplane CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'crossplane-eks/**'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'crossplane-eks/**'
+  workflow_dispatch:
+
+env:
+  CROSSPLANE_VERSION: v1.15.0
+  PACKAGE_NAME: configuration-eks-cluster
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/crossplane-eks
+
+jobs:
+  validate:
+    name: Validate YAML and Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        uses: mikefarah/yq@v4
+
+      - name: Validate YAML syntax
+        run: |
+          echo "Validating YAML files..."
+          for file in crossplane-eks/*.yaml; do
+            echo "Checking $file"
+            yq eval '.' "$file" > /dev/null
+          done
+          echo "All YAML files are valid"
+
+      - name: Validate XRD schema
+        run: |
+          echo "Validating XRD..."
+          API_VERSION=$(yq eval '.apiVersion' crossplane-eks/definition.yaml)
+          if [ "$API_VERSION" != "apiextensions.crossplane.io/v2" ]; then
+            echo "Error: XRD apiVersion should be apiextensions.crossplane.io/v2"
+            exit 1
+          fi
+          echo "XRD validation passed"
+
+      - name: Validate Composition schema
+        run: |
+          echo "Validating Composition..."
+          API_VERSION=$(yq eval '.apiVersion' crossplane-eks/composition.yaml)
+          MODE=$(yq eval '.spec.mode' crossplane-eks/composition.yaml)
+          
+          if [ "$API_VERSION" != "apiextensions.crossplane.io/v2" ]; then
+            echo "Error: Composition apiVersion should be apiextensions.crossplane.io/v2"
+            exit 1
+          fi
+          
+          if [ "$MODE" != "Pipeline" ]; then
+            echo "Error: Composition mode should be Pipeline"
+            exit 1
+          fi
+          
+          echo "Composition validation passed"
+
+  render-test:
+    name: Render Test
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Crossplane CLI
+        run: |
+          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh" | sh
+          sudo mv crossplane /usr/local/bin/
+
+      - name: Verify Crossplane CLI
+        run: crossplane --version
+
+      - name: Run crossplane beta render
+        run: |
+          echo "Running crossplane beta render..."
+          crossplane beta render \
+            crossplane-eks/tests/render/composite.yaml \
+            crossplane-eks/composition.yaml \
+            crossplane-eks/tests/render/functions.yaml \
+            -o crossplane-eks/tests/render/output.yaml
+          
+          echo "Render output:"
+          cat crossplane-eks/tests/render/output.yaml
+
+      - name: Validate rendered resources
+        run: |
+          OUTPUT_FILE="crossplane-eks/tests/render/output.yaml"
+          
+          # Expected resource kinds
+          EXPECTED_KINDS=("VPC" "InternetGateway" "Subnet" "EIP" "NATGateway" "RouteTable" "Route" "RouteTableAssociation" "Role" "RolePolicyAttachment" "Cluster" "NodeGroup")
+          
+          echo "Validating rendered resources..."
+          ERRORS=0
+          
+          for kind in "${EXPECTED_KINDS[@]}"; do
+            if grep -q "kind: $kind" "$OUTPUT_FILE"; then
+              echo "✓ Found $kind"
+            else
+              echo "✗ Missing $kind"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          # Validate counts
+          SUBNET_COUNT=$(grep -c "kind: Subnet" "$OUTPUT_FILE" || true)
+          ROLE_COUNT=$(grep -c "kind: Role" "$OUTPUT_FILE" || true)
+          
+          echo ""
+          echo "Resource counts:"
+          echo "  Subnets: $SUBNET_COUNT (expected: 4)"
+          echo "  Roles: $ROLE_COUNT (expected: 2)"
+          
+          if [ "$SUBNET_COUNT" -ne 4 ]; then
+            echo "✗ Expected 4 subnets"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          if [ "$ROLE_COUNT" -ne 2 ]; then
+            echo "✗ Expected 2 roles"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          # Validate field values
+          echo ""
+          echo "Validating field values..."
+          
+          if grep -q "region: us-west-2" "$OUTPUT_FILE"; then
+            echo "✓ Region is correctly set"
+          else
+            echo "✗ Region not found or incorrect"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          if grep -q 'cidrBlock: "10.0.0.0/16"' "$OUTPUT_FILE"; then
+            echo "✓ VPC CIDR is correctly set"
+          else
+            echo "✗ VPC CIDR not found or incorrect"
+            ERRORS=$((ERRORS + 1))
+          fi
+          
+          if [ "$ERRORS" -gt 0 ]; then
+            echo ""
+            echo "✗ $ERRORS validation(s) failed"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✓ All validations passed!"
+
+      - name: Upload render output
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-output
+          path: crossplane-eks/tests/render/output.yaml
+
+  build-package:
+    name: Build Crossplane Package
+    runs-on: ubuntu-latest
+    needs: render-test
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Crossplane CLI
+        run: |
+          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh" | sh
+          sudo mv crossplane /usr/local/bin/
+
+      - name: Build Crossplane package
+        run: |
+          cd crossplane-eks
+          crossplane xpkg build \
+            --package-root=. \
+            --package-file=../crossplane-eks-package.xpkg
+          
+          echo "Package built successfully"
+          ls -la ../crossplane-eks-package.xpkg
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crossplane-package
+          path: crossplane-eks-package.xpkg
+
+  push-package:
+    name: Push Package to Registry
+    runs-on: ubuntu-latest
+    needs: build-package
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Crossplane CLI
+        run: |
+          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh" | sh
+          sudo mv crossplane /usr/local/bin/
+
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: crossplane-package
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push package to registry
+        run: |
+          # Get version from git
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "latest")
+          
+          echo "Pushing package version: $VERSION"
+          
+          crossplane xpkg push \
+            --package-files=crossplane-eks-package.xpkg \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}
+          
+          # Also push as latest
+          crossplane xpkg push \
+            --package-files=crossplane-eks-package.xpkg \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          echo "Package pushed successfully"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+
+  integration-test:
+    name: Integration Test (Kind)
+    runs-on: ubuntu-latest
+    needs: build-package
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: crossplane-test
+
+      - name: Install Crossplane
+        run: |
+          helm repo add crossplane-stable https://charts.crossplane.io/stable
+          helm repo update
+          
+          helm install crossplane \
+            --namespace crossplane-system \
+            --create-namespace \
+            crossplane-stable/crossplane \
+            --version ${{ env.CROSSPLANE_VERSION }} \
+            --wait
+
+      - name: Wait for Crossplane
+        run: |
+          kubectl wait --for=condition=Available deployment/crossplane \
+            --namespace crossplane-system \
+            --timeout=120s
+          
+          kubectl wait --for=condition=Available deployment/crossplane-rbac-manager \
+            --namespace crossplane-system \
+            --timeout=120s
+
+      - name: Install function-patch-and-transform
+        run: |
+          kubectl apply -f crossplane-eks/functions.yaml
+          
+          # Wait for function to be healthy
+          sleep 30
+          kubectl get functions
+
+      - name: Apply XRD
+        run: |
+          kubectl apply -f crossplane-eks/definition.yaml
+          
+          # Wait for XRD to be established
+          sleep 10
+          kubectl get xrd
+
+      - name: Apply Composition
+        run: |
+          kubectl apply -f crossplane-eks/composition.yaml
+          
+          # Verify composition
+          kubectl get compositions
+
+      - name: Verify CRD created
+        run: |
+          # Wait for CRD to be created
+          sleep 10
+          
+          # Check if the claim CRD exists
+          kubectl get crd eksclusters.aws.example.com || {
+            echo "CRD not found, listing available CRDs:"
+            kubectl get crd | grep -i eks || true
+            exit 1
+          }
+          
+          echo "CRD created successfully"
+
+      - name: Test claim validation (dry-run)
+        run: |
+          kubectl apply -f crossplane-eks/claim.yaml --dry-run=server
+          echo "Claim validation passed"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kind delete cluster --name crossplane-test || true

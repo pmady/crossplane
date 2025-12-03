@@ -1,0 +1,18 @@
+# Test composite resource for crossplane beta render
+apiVersion: aws.example.com/v1alpha1
+kind: XEKSCluster
+metadata:
+  name: test-eks-cluster
+spec:
+  parameters:
+    region: us-west-2
+    vpcCidrBlock: "10.0.0.0/16"
+    publicSubnet1Cidr: "10.0.1.0/24"
+    publicSubnet2Cidr: "10.0.2.0/24"
+    privateSubnet1Cidr: "10.0.3.0/24"
+    privateSubnet2Cidr: "10.0.4.0/24"
+    k8sVersion: "1.28"
+    nodeInstanceType: t3.medium
+    desiredNodeCount: 2
+    minNodeCount: 1
+    maxNodeCount: 5

@@ -1,0 +1,89 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: xeksclusters.aws.example.com
+spec:
+  group: aws.example.com
+  names:
+    kind: XEKSCluster
+    plural: xeksclusters
+  claimNames:
+    kind: EKSCluster
+    plural: eksclusters
+  connectionSecretKeys:
+    - kubeconfig
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  description: EKS cluster configuration parameters
+                  properties:
+                    region:
+                      type: string
+                      description: AWS region for the EKS cluster
+                      default: us-west-2
+                    vpcCidrBlock:
+                      type: string
+                      description: CIDR block for the VPC
+                      default: "10.0.0.0/16"
+                    publicSubnet1Cidr:
+                      type: string
+                      description: CIDR block for public subnet 1
+                      default: "10.0.1.0/24"
+                    publicSubnet2Cidr:
+                      type: string
+                      description: CIDR block for public subnet 2
+                      default: "10.0.2.0/24"
+                    privateSubnet1Cidr:
+                      type: string
+                      description: CIDR block for private subnet 1
+                      default: "10.0.3.0/24"
+                    privateSubnet2Cidr:
+                      type: string
+                      description: CIDR block for private subnet 2
+                      default: "10.0.4.0/24"
+                    k8sVersion:
+                      type: string
+                      description: Kubernetes version for EKS
+                      default: "1.28"
+                    nodeInstanceType:
+                      type: string
+                      description: EC2 instance type for worker nodes
+                      default: t3.medium
+                    desiredNodeCount:
+                      type: integer
+                      description: Desired number of worker nodes
+                      default: 2
+                    minNodeCount:
+                      type: integer
+                      description: Minimum number of worker nodes
+                      default: 1
+                    maxNodeCount:
+                      type: integer
+                      description: Maximum number of worker nodes
+                      default: 5
+                  required:
+                    - region
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                vpcId:
+                  type: string
+                  description: ID of the created VPC
+                clusterEndpoint:
+                  type: string
+                  description: EKS cluster API endpoint
+                clusterName:
+                  type: string
+                  description: Name of the EKS cluster

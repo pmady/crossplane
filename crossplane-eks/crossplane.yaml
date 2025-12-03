@@ -1,0 +1,29 @@
+apiVersion: meta.pkg.crossplane.io/v1alpha1
+kind: Configuration
+metadata:
+  name: configuration-eks-cluster
+  annotations:
+    meta.crossplane.io/maintainer: Platform Team
+    meta.crossplane.io/source: github.com/pmady/crossplane-eks
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: AWS EKS Cluster with VPC and networking
+    meta.crossplane.io/readme: |
+      This configuration deploys a complete AWS EKS cluster with:
+      - VPC with public and private subnets
+      - Internet Gateway and NAT Gateway
+      - EKS control plane and managed node groups
+      - Required IAM roles and policies
+spec:
+  crossplane:
+    version: ">=v1.14.0"
+  dependsOn:
+    - configuration: xpkg.upbound.io/upbound/configuration-aws-network
+      version: ">=v0.9.0"
+    - function: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform
+      version: ">=v0.7.0"
+    - provider: xpkg.upbound.io/upbound/provider-aws-ec2
+      version: ">=v1.1.0"
+    - provider: xpkg.upbound.io/upbound/provider-aws-eks
+      version: ">=v1.1.0"
+    - provider: xpkg.upbound.io/upbound/provider-aws-iam
+      version: ">=v1.1.0"

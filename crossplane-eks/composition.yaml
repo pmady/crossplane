@@ -1,0 +1,704 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: Composition
+metadata:
+  name: xeksclusters.aws.example.com
+  labels:
+    provider: aws
+spec:
+  compositeTypeRef:
+    apiVersion: aws.example.com/v1alpha1
+    kind: XEKSCluster
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        patchSets:
+          - name: common-parameters
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+        resources:
+          # ===================
+          # VPC
+          # ===================
+          - name: vpc
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: VPC
+              spec:
+                forProvider:
+                  cidrBlock: 10.0.0.0/16
+                  enableDnsHostnames: true
+                  enableDnsSupport: true
+                  tags:
+                    Name: eks-vpc
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.vpcCidrBlock
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-vpc"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.id
+                toFieldPath: status.vpcId
+
+          # ===================
+          # Internet Gateway
+          # ===================
+          - name: internet-gateway
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: InternetGateway
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  tags:
+                    Name: eks-igw
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-igw"
+
+          # ===================
+          # Public Subnet 1
+          # ===================
+          - name: public-subnet-1
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Subnet
+              metadata:
+                labels:
+                  access: public
+                  zone: a
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  mapPublicIpOnLaunch: true
+                  tags:
+                    Name: eks-public-subnet-1
+                    "kubernetes.io/role/elb": "1"
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publicSubnet1Cidr
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.availabilityZone
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%sa"
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-public-subnet-1"
+
+          # ===================
+          # Public Subnet 2
+          # ===================
+          - name: public-subnet-2
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Subnet
+              metadata:
+                labels:
+                  access: public
+                  zone: b
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  mapPublicIpOnLaunch: true
+                  tags:
+                    Name: eks-public-subnet-2
+                    "kubernetes.io/role/elb": "1"
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publicSubnet2Cidr
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.availabilityZone
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%sb"
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-public-subnet-2"
+
+          # ===================
+          # Private Subnet 1
+          # ===================
+          - name: private-subnet-1
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Subnet
+              metadata:
+                labels:
+                  access: private
+                  zone: a
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  mapPublicIpOnLaunch: false
+                  tags:
+                    Name: eks-private-subnet-1
+                    "kubernetes.io/role/internal-elb": "1"
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.privateSubnet1Cidr
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.availabilityZone
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%sa"
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-private-subnet-1"
+
+          # ===================
+          # Private Subnet 2
+          # ===================
+          - name: private-subnet-2
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Subnet
+              metadata:
+                labels:
+                  access: private
+                  zone: b
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  mapPublicIpOnLaunch: false
+                  tags:
+                    Name: eks-private-subnet-2
+                    "kubernetes.io/role/internal-elb": "1"
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.privateSubnet2Cidr
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.availabilityZone
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%sb"
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-private-subnet-2"
+
+          # ===================
+          # Elastic IP for NAT Gateway
+          # ===================
+          - name: elastic-ip
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: EIP
+              spec:
+                forProvider:
+                  domain: vpc
+                  tags:
+                    Name: eks-nat-eip
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-nat-eip"
+
+          # ===================
+          # NAT Gateway
+          # ===================
+          - name: nat-gateway
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: NATGateway
+              spec:
+                forProvider:
+                  allocationIdSelector:
+                    matchControllerRef: true
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: public
+                      zone: a
+                  tags:
+                    Name: eks-nat-gateway
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-nat-gateway"
+
+          # ===================
+          # Public Route Table
+          # ===================
+          - name: public-route-table
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: RouteTable
+              metadata:
+                labels:
+                  access: public
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  tags:
+                    Name: eks-public-rt
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-public-rt"
+
+          # ===================
+          # Public Route (to Internet Gateway)
+          # ===================
+          - name: public-route
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Route
+              spec:
+                forProvider:
+                  destinationCidrBlock: 0.0.0.0/0
+                  gatewayIdSelector:
+                    matchControllerRef: true
+                  routeTableIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: public
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+
+          # ===================
+          # Private Route Table
+          # ===================
+          - name: private-route-table
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: RouteTable
+              metadata:
+                labels:
+                  access: private
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  tags:
+                    Name: eks-private-rt
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-private-rt"
+
+          # ===================
+          # Private Route (to NAT Gateway)
+          # ===================
+          - name: private-route
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Route
+              spec:
+                forProvider:
+                  destinationCidrBlock: 0.0.0.0/0
+                  natGatewayIdSelector:
+                    matchControllerRef: true
+                  routeTableIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+
+          # ===================
+          # Route Table Associations
+          # ===================
+          - name: public-subnet-1-rt-association
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: RouteTableAssociation
+              spec:
+                forProvider:
+                  routeTableIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: public
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: public
+                      zone: a
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+
+          - name: public-subnet-2-rt-association
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: RouteTableAssociation
+              spec:
+                forProvider:
+                  routeTableIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: public
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: public
+                      zone: b
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+
+          - name: private-subnet-1-rt-association
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: RouteTableAssociation
+              spec:
+                forProvider:
+                  routeTableIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                      zone: a
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+
+          - name: private-subnet-2-rt-association
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: RouteTableAssociation
+              spec:
+                forProvider:
+                  routeTableIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                      zone: b
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+
+          # ===================
+          # EKS Cluster IAM Role
+          # ===================
+          - name: eks-cluster-role
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: Role
+              metadata:
+                labels:
+                  role: eks-cluster
+              spec:
+                forProvider:
+                  assumeRolePolicy: |
+                    {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Principal": {
+                            "Service": "eks.amazonaws.com"
+                          },
+                          "Action": "sts:AssumeRole"
+                        }
+                      ]
+                    }
+                  tags:
+                    Name: eks-cluster-role
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-eks-cluster-role"
+
+          - name: eks-cluster-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-cluster
+
+          - name: eks-vpc-resource-controller-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/AmazonEKSVPCResourceController
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-cluster
+
+          # ===================
+          # EKS Node Group IAM Role
+          # ===================
+          - name: eks-node-role
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: Role
+              metadata:
+                labels:
+                  role: eks-node
+              spec:
+                forProvider:
+                  assumeRolePolicy: |
+                    {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Principal": {
+                            "Service": "ec2.amazonaws.com"
+                          },
+                          "Action": "sts:AssumeRole"
+                        }
+                      ]
+                    }
+                  tags:
+                    Name: eks-node-role
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-eks-node-role"
+
+          - name: eks-worker-node-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-node
+
+          - name: eks-cni-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-node
+
+          - name: eks-ecr-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-node
+
+          # ===================
+          # EKS Cluster
+          # ===================
+          - name: eks-cluster
+            base:
+              apiVersion: eks.aws.upbound.io/v1beta1
+              kind: Cluster
+              spec:
+                forProvider:
+                  roleArnSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-cluster
+                  vpcConfig:
+                    - endpointPrivateAccess: true
+                      endpointPublicAccess: true
+                      subnetIdSelector:
+                        matchControllerRef: true
+                  tags:
+                    Name: eks-cluster
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.k8sVersion
+                toFieldPath: spec.forProvider.version
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-eks-cluster"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.endpoint
+                toFieldPath: status.clusterEndpoint
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.name
+                toFieldPath: status.clusterName
+
+          # ===================
+          # EKS Node Group
+          # ===================
+          - name: eks-node-group
+            base:
+              apiVersion: eks.aws.upbound.io/v1beta1
+              kind: NodeGroup
+              spec:
+                forProvider:
+                  clusterNameSelector:
+                    matchControllerRef: true
+                  nodeRoleArnSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-node
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                  scalingConfig:
+                    - desiredSize: 2
+                      maxSize: 5
+                      minSize: 1
+                  instanceTypes:
+                    - t3.medium
+                  tags:
+                    Name: eks-node-group
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.nodeInstanceType
+                toFieldPath: spec.forProvider.instanceTypes[0]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.desiredNodeCount
+                toFieldPath: spec.forProvider.scalingConfig[0].desiredSize
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.minNodeCount
+                toFieldPath: spec.forProvider.scalingConfig[0].minSize
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.maxNodeCount
+                toFieldPath: spec.forProvider.scalingConfig[0].maxSize
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-eks-node-group"

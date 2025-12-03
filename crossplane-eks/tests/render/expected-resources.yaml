@@ -1,0 +1,120 @@
+# Expected resources from render - used for validation
+# This file contains the expected resource names and kinds that should be rendered
+
+---
+# VPC
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: VPC
+metadata:
+  name: test-eks-cluster-vpc
+spec:
+  forProvider:
+    region: us-west-2
+    cidrBlock: "10.0.0.0/16"
+    enableDnsHostnames: true
+    enableDnsSupport: true
+    tags:
+      Name: test-eks-cluster-vpc
+
+---
+# Internet Gateway
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: InternetGateway
+metadata:
+  name: test-eks-cluster-igw
+spec:
+  forProvider:
+    region: us-west-2
+    tags:
+      Name: test-eks-cluster-igw
+
+---
+# Public Subnet 1
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: test-eks-cluster-public-subnet-1
+  labels:
+    access: public
+    zone: a
+spec:
+  forProvider:
+    region: us-west-2
+    cidrBlock: "10.0.1.0/24"
+    availabilityZone: us-west-2a
+    mapPublicIpOnLaunch: true
+
+---
+# Public Subnet 2
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: test-eks-cluster-public-subnet-2
+  labels:
+    access: public
+    zone: b
+spec:
+  forProvider:
+    region: us-west-2
+    cidrBlock: "10.0.2.0/24"
+    availabilityZone: us-west-2b
+    mapPublicIpOnLaunch: true
+
+---
+# Private Subnet 1
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: test-eks-cluster-private-subnet-1
+  labels:
+    access: private
+    zone: a
+spec:
+  forProvider:
+    region: us-west-2
+    cidrBlock: "10.0.3.0/24"
+    availabilityZone: us-west-2a
+    mapPublicIpOnLaunch: false
+
+---
+# Private Subnet 2
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: test-eks-cluster-private-subnet-2
+  labels:
+    access: private
+    zone: b
+spec:
+  forProvider:
+    region: us-west-2
+    cidrBlock: "10.0.4.0/24"
+    availabilityZone: us-west-2b
+    mapPublicIpOnLaunch: false
+
+---
+# EKS Cluster
+apiVersion: eks.aws.upbound.io/v1beta1
+kind: Cluster
+metadata:
+  name: test-eks-cluster-eks
+spec:
+  forProvider:
+    region: us-west-2
+    version: "1.28"
+
+---
+# EKS Node Group
+apiVersion: eks.aws.upbound.io/v1beta1
+kind: NodeGroup
+metadata:
+  name: test-eks-cluster-nodegroup
+spec:
+  forProvider:
+    region: us-west-2
+    instanceTypes:
+      - t3.medium
+    scalingConfig:
+      - desiredSize: 2
+        minSize: 1
+        maxSize: 5
