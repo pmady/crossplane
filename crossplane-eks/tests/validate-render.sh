@@ -19,9 +19,9 @@ if ! command -v crossplane &> /dev/null; then
     exit 1
 fi
 
-# Run crossplane beta render
-echo -e "\n${YELLOW}Running crossplane beta render...${NC}"
-RENDER_OUTPUT=$(crossplane beta render \
+# Run crossplane render
+echo -e "\n${YELLOW}Running crossplane render...${NC}"
+RENDER_OUTPUT=$(crossplane render \
     "${SCRIPT_DIR}/render/composite.yaml" \
     "${PROJECT_DIR}/composition.yaml" \
     "${SCRIPT_DIR}/render/functions.yaml" \

@@ -83,12 +83,12 @@ jobs:
           sudo mv crossplane /usr/local/bin/
 
       - name: Verify Crossplane CLI
-        run: crossplane --version
+        run: crossplane version
 
-      - name: Run crossplane beta render
+      - name: Run crossplane render
         run: |
-          echo "Running crossplane beta render..."
-          crossplane beta render \
+          echo "Running crossplane render..."
+          crossplane render \
             crossplane-eks/tests/render/composite.yaml \
             crossplane-eks/composition.yaml \
             crossplane-eks/tests/render/functions.yaml \
