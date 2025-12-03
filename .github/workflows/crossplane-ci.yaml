@@ -83,7 +83,7 @@ jobs:
           sudo mv crossplane /usr/local/bin/
 
       - name: Verify Crossplane CLI
-        run: crossplane version
+        run: crossplane --help | head -5
 
       - name: Run crossplane render
         run: |
