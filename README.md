@@ -4,12 +4,35 @@
 
 I'm a DevOps/Platform Engineer passionate about cloud-native technologies and open source.
 
-## 🔧 Currently Working With
+## ☁️ Cloud Platforms
+
+- **AWS** (Current)
+- **Azure** (Previous)
+
+## 🔧 Technologies & Tools
+
+### Container Orchestration & GitOps
 
 - **Kubernetes** - Container orchestration and cluster management
 - **ArgoCD** - GitOps continuous delivery
 - **Docker** - Containerization
 - **Crossplane** - Infrastructure as code using Kubernetes
+
+### Observability
+
+- **Prometheus** & **Grafana** - Metrics and visualization
+- **Splunk** - Log management and analytics
+- **Datadog** - Monitoring and APM
+- **OpenTelemetry** - Distributed tracing and observability
+
+### Policy Management
+
+- **Kyverno** - Kubernetes native policy management
+- **OPA (Open Policy Agent)** - Policy as code
+
+### CI/CD
+
+- Experience with various CI/CD tools and pipelines
 
 ## 🌱 Open Source Contributions
 
