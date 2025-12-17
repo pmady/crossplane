@@ -3,10 +3,11 @@ kind: Configuration
 metadata:
   name: configuration-eks-cluster
   annotations:
-    meta.crossplane.io/maintainer: Platform Team
-    meta.crossplane.io/source: github.com/pmady/crossplane-eks
+    meta.crossplane.io/maintainer: Pavan Madduri <pavan4devops@gmail.com>
+    meta.crossplane.io/source: github.com/pmady/crossplane
     meta.crossplane.io/license: Apache-2.0
     meta.crossplane.io/description: AWS EKS Cluster with VPC and networking
+    meta.crossplane.io/keywords: aws,eks,kubernetes,vpc,networking
     meta.crossplane.io/readme: |
       This configuration deploys a complete AWS EKS cluster with:
       - VPC with public and private subnets
