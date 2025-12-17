@@ -80,6 +80,13 @@ The GitHub Actions workflow automatically:
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
 
+## Roadmap
+
+- [ ] Add Azure AKS composition
+- [ ] Add GCP GKE composition
+- [ ] Add multi-region support
+- [ ] Add Helm chart deployment composition
+
 ## License
 
 Apache 2.0
