@@ -87,8 +87,8 @@ jobs:
 
       - name: Run crossplane render
         run: |
-          echo "Running crossplane render..."
-          crossplane render \
+          echo "Running crossplane beta render..."
+          crossplane beta render \
             crossplane-eks/tests/render/composite.yaml \
             crossplane-eks/composition.yaml \
             crossplane-eks/tests/render/functions.yaml \
