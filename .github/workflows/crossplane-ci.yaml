@@ -183,18 +183,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Crossplane CLI
+      - name: Install up CLI
         run: |
-          # Use v1.18.0 for package build (more lenient validation)
-          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-1.18/install.sh" | XP_VERSION=v1.18.0 sh
-          sudo mv crossplane /usr/local/bin/
+          # Use up CLI for package build (better support for configurations)
+          curl -sL "https://cli.upbound.io" | sh
+          sudo mv up /usr/local/bin/
 
       - name: Build Crossplane package
         run: |
           cd crossplane-eks
-          crossplane xpkg build \
+          up xpkg build \
             --package-root=. \
-            --package-file=../crossplane-eks-package.xpkg \
+            --output=../crossplane-eks-package.xpkg \
             --ignore="tests/*"
           
           echo "Package built successfully"
