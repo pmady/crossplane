@@ -1,0 +1,44 @@
+# yamllint configuration
+# See https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Allow long lines for Crossplane resources
+  line-length:
+    max: 200
+    level: warning
+
+  # Allow multiple documents in a single file
+  document-start: disable
+
+  # Indentation settings
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Allow inline comments
+  comments:
+    require-starting-space: true
+    ignore-shebangs: true
+    min-spaces-from-content: 1
+
+  # Truthy values
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: false
+
+  # Braces and brackets
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1

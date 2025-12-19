@@ -78,7 +78,22 @@ The GitHub Actions workflow automatically:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+### Pre-commit Hooks
+
+This repository uses pre-commit hooks for code quality:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Set up hooks
+pre-commit install
+
+# Run manually
+pre-commit run --all-files
+```
 
 ## Roadmap
 
