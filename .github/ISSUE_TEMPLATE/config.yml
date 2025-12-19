@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Crossplane Documentation
+    url: https://docs.crossplane.io/
+    about: Official Crossplane documentation
+  - name: Crossplane Slack
+    url: https://slack.crossplane.io/
+    about: Join the Crossplane community on Slack
+  - name: Good First Issues
+    url: https://github.com/pmady/crossplane/blob/main/GOOD_FIRST_ISSUES.md
+    about: Looking to contribute? Check out our good first issues!
