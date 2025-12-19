@@ -94,7 +94,7 @@ jobs:
             crossplane-eks/tests/render/composite.yaml \
             crossplane-eks/composition.yaml \
             crossplane-eks/tests/render/functions.yaml \
-            -o crossplane-eks/tests/render/output.yaml
+            > crossplane-eks/tests/render/output.yaml
           
           echo "Render output:"
           cat crossplane-eks/tests/render/output.yaml
