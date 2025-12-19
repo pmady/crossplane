@@ -1,0 +1,64 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: argocd
+spec:
+  forProvider:
+    chart:
+      name: argo-cd
+      repository: https://argoproj.github.io/argo-helm
+      version: "6.7.3"
+    namespace: argocd
+    values:
+      global:
+        image:
+          tag: v2.10.4
+      server:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        service:
+          type: LoadBalancer
+        ingress:
+          enabled: false
+      controller:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      repoServer:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      applicationSet:
+        enabled: true
+        replicas: 1
+      notifications:
+        enabled: true
+      dex:
+        enabled: false
+      redis:
+        enabled: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+  providerConfigRef:
+    name: default

@@ -1,0 +1,59 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: kube-prometheus-stack
+spec:
+  forProvider:
+    chart:
+      name: kube-prometheus-stack
+      repository: https://prometheus-community.github.io/helm-charts
+      version: "57.0.1"
+    namespace: monitoring
+    values:
+      prometheus:
+        prometheusSpec:
+          retention: 7d
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 50Gi
+      grafana:
+        enabled: true
+        adminPassword: admin
+        persistence:
+          enabled: true
+          size: 10Gi
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      alertmanager:
+        enabled: true
+        alertmanagerSpec:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      nodeExporter:
+        enabled: true
+      kubeStateMetrics:
+        enabled: true
+  providerConfigRef:
+    name: default
