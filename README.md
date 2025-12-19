@@ -9,6 +9,7 @@ A collection of **Crossplane 2.0** compositions for provisioning cloud infrastru
 | Composition | Description | Cloud Provider |
 |-------------|-------------|----------------|
 | [crossplane-eks](./crossplane-eks/) | Complete EKS cluster with VPC, subnets, and networking | AWS |
+| [crossplane-s3](./crossplane-s3/) | S3 bucket with versioning, encryption, and lifecycle policies | AWS |
 
 ## Features
 
@@ -97,6 +98,7 @@ pre-commit run --all-files
 
 ## Roadmap
 
+- [x] Add S3 bucket composition
 - [ ] Add Azure AKS composition
 - [ ] Add GCP GKE composition
 - [ ] Add multi-region support

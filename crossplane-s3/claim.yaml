@@ -1,0 +1,15 @@
+apiVersion: aws.example.com/v1alpha1
+kind: S3Bucket
+metadata:
+  name: my-app-bucket
+  namespace: default
+spec:
+  parameters:
+    region: us-west-2
+    versioning: true
+    encryption: AES256
+    publicAccessBlock: true
+    lifecycleEnabled: false
+  compositionSelector:
+    matchLabels:
+      provider: aws

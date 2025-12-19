@@ -1,0 +1,169 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xs3buckets.aws.example.com
+  labels:
+    provider: aws
+spec:
+  compositeTypeRef:
+    apiVersion: aws.example.com/v1alpha1
+    kind: XS3Bucket
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        patchSets:
+          - name: common-parameters
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+        resources:
+          # ===================
+          # S3 Bucket
+          # ===================
+          - name: bucket
+            base:
+              apiVersion: s3.aws.upbound.io/v1beta1
+              kind: Bucket
+              spec:
+                forProvider:
+                  forceDestroy: false
+                  tags:
+                    ManagedBy: crossplane
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.arn
+                toFieldPath: status.bucketArn
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.id
+                toFieldPath: status.bucketName
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.region
+                toFieldPath: status.bucketRegion
+
+          # ===================
+          # Bucket Versioning
+          # ===================
+          - name: bucket-versioning
+            base:
+              apiVersion: s3.aws.upbound.io/v1beta1
+              kind: BucketVersioning
+              spec:
+                forProvider:
+                  bucketSelector:
+                    matchControllerRef: true
+                  versioningConfiguration:
+                    - status: Enabled
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.versioning
+                toFieldPath: spec.forProvider.versioningConfiguration[0].status
+                transforms:
+                  - type: convert
+                    convert:
+                      toType: string
+                  - type: map
+                    map:
+                      "true": Enabled
+                      "false": Suspended
+
+          # ===================
+          # Server-Side Encryption
+          # ===================
+          - name: bucket-encryption
+            base:
+              apiVersion: s3.aws.upbound.io/v1beta1
+              kind: BucketServerSideEncryptionConfiguration
+              spec:
+                forProvider:
+                  bucketSelector:
+                    matchControllerRef: true
+                  rule:
+                    - applyServerSideEncryptionByDefault:
+                        - sseAlgorithm: AES256
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.encryption
+                toFieldPath: spec.forProvider.rule[0].applyServerSideEncryptionByDefault[0].sseAlgorithm
+
+          # ===================
+          # Public Access Block
+          # ===================
+          - name: bucket-public-access-block
+            base:
+              apiVersion: s3.aws.upbound.io/v1beta1
+              kind: BucketPublicAccessBlock
+              spec:
+                forProvider:
+                  bucketSelector:
+                    matchControllerRef: true
+                  blockPublicAcls: true
+                  blockPublicPolicy: true
+                  ignorePublicAcls: true
+                  restrictPublicBuckets: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publicAccessBlock
+                toFieldPath: spec.forProvider.blockPublicAcls
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publicAccessBlock
+                toFieldPath: spec.forProvider.blockPublicPolicy
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publicAccessBlock
+                toFieldPath: spec.forProvider.ignorePublicAcls
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.publicAccessBlock
+                toFieldPath: spec.forProvider.restrictPublicBuckets
+
+          # ===================
+          # Lifecycle Configuration
+          # ===================
+          - name: bucket-lifecycle
+            base:
+              apiVersion: s3.aws.upbound.io/v1beta1
+              kind: BucketLifecycleConfiguration
+              spec:
+                forProvider:
+                  bucketSelector:
+                    matchControllerRef: true
+                  rule:
+                    - id: transition-to-glacier
+                      status: Enabled
+                      filter:
+                        - prefix: ""
+                      transition:
+                        - days: 90
+                          storageClass: GLACIER
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.lifecycleEnabled
+                toFieldPath: spec.forProvider.rule[0].status
+                transforms:
+                  - type: convert
+                    convert:
+                      toType: string
+                  - type: map
+                    map:
+                      "true": Enabled
+                      "false": Disabled
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.lifecycleDays
+                toFieldPath: spec.forProvider.rule[0].transition[0].days

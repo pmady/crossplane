@@ -1,0 +1,74 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: xs3buckets.aws.example.com
+spec:
+  group: aws.example.com
+  names:
+    kind: XS3Bucket
+    plural: xs3buckets
+  claimNames:
+    kind: S3Bucket
+    plural: s3buckets
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  description: S3 bucket configuration parameters
+                  properties:
+                    region:
+                      type: string
+                      description: AWS region for the S3 bucket
+                      default: us-west-2
+                    versioning:
+                      type: boolean
+                      description: Enable versioning for the bucket
+                      default: true
+                    encryption:
+                      type: string
+                      description: Server-side encryption algorithm (AES256 or aws:kms)
+                      default: AES256
+                      enum:
+                        - AES256
+                        - aws:kms
+                    publicAccessBlock:
+                      type: boolean
+                      description: Block all public access to the bucket
+                      default: true
+                    lifecycleEnabled:
+                      type: boolean
+                      description: Enable lifecycle rules for the bucket
+                      default: false
+                    lifecycleDays:
+                      type: integer
+                      description: Days before transitioning objects to Glacier
+                      default: 90
+                    expirationDays:
+                      type: integer
+                      description: Days before expiring objects (0 to disable)
+                      default: 0
+                  required:
+                    - region
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                bucketArn:
+                  type: string
+                  description: ARN of the created S3 bucket
+                bucketName:
+                  type: string
+                  description: Name of the S3 bucket
+                bucketRegion:
+                  type: string
+                  description: Region of the S3 bucket
