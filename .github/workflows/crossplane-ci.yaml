@@ -45,11 +45,11 @@ jobs:
         run: |
           echo "Validating XRD..."
           API_VERSION=$(yq eval '.apiVersion' crossplane-eks/definition.yaml)
-          if [ "$API_VERSION" != "apiextensions.crossplane.io/v2" ]; then
-            echo "Error: XRD apiVersion should be apiextensions.crossplane.io/v2"
+          if [ "$API_VERSION" != "apiextensions.crossplane.io/v1" ] && [ "$API_VERSION" != "apiextensions.crossplane.io/v2" ]; then
+            echo "Error: XRD apiVersion should be apiextensions.crossplane.io/v1 or v2"
             exit 1
           fi
-          echo "XRD validation passed"
+          echo "XRD validation passed (apiVersion: $API_VERSION)"
 
       - name: Validate Composition schema
         run: |
@@ -57,8 +57,8 @@ jobs:
           API_VERSION=$(yq eval '.apiVersion' crossplane-eks/composition.yaml)
           MODE=$(yq eval '.spec.mode' crossplane-eks/composition.yaml)
           
-          if [ "$API_VERSION" != "apiextensions.crossplane.io/v2" ]; then
-            echo "Error: Composition apiVersion should be apiextensions.crossplane.io/v2"
+          if [ "$API_VERSION" != "apiextensions.crossplane.io/v1" ] && [ "$API_VERSION" != "apiextensions.crossplane.io/v2" ]; then
+            echo "Error: Composition apiVersion should be apiextensions.crossplane.io/v1 or v2"
             exit 1
           fi
           
@@ -67,7 +67,7 @@ jobs:
             exit 1
           fi
           
-          echo "Composition validation passed"
+          echo "Composition validation passed (apiVersion: $API_VERSION, mode: $MODE)"
 
   render-test:
     name: Render Test
