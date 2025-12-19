@@ -79,8 +79,8 @@ jobs:
 
       - name: Install Crossplane CLI
         run: |
-          # Install Crossplane CLI v1.18.0 which supports v2 compositions
-          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-1.18/install.sh" | XP_VERSION=v1.18.0 sh
+          # Install Crossplane CLI v2.x which supports v2 compositions
+          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-2.1/install.sh" | sh
           sudo mv crossplane /usr/local/bin/
 
       - name: Verify Crossplane CLI
@@ -183,7 +183,7 @@ jobs:
 
       - name: Install Crossplane CLI
         run: |
-          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-1.18/install.sh" | XP_VERSION=v1.18.0 sh
+          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-2.1/install.sh" | sh
           sudo mv crossplane /usr/local/bin/
 
       - name: Build Crossplane package
@@ -216,7 +216,7 @@ jobs:
 
       - name: Install Crossplane CLI
         run: |
-          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-1.18/install.sh" | XP_VERSION=v1.18.0 sh
+          curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/release-2.1/install.sh" | sh
           sudo mv crossplane /usr/local/bin/
 
       - name: Download package artifact
