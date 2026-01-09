@@ -81,6 +81,10 @@ The GitHub Actions workflow automatically:
 
 Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
+## Troubleshooting
+
+Having issues? Check our [Troubleshooting Guide](./TROUBLESHOOTING.md) for common problems and solutions.
+
 ### Pre-commit Hooks
 
 This repository uses pre-commit hooks for code quality:
