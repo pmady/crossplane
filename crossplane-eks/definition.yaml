@@ -183,3 +183,59 @@ spec:
                 clusterName:
                   type: string
                   description: Name of the EKS cluster
+                costEstimate:
+                  type: object
+                  description: Estimated monthly and yearly costs for the cluster
+                  properties:
+                    currency:
+                      type: string
+                      description: Currency code for cost estimates
+                      default: "USD"
+                    monthly:
+                      type: number
+                      description: Estimated monthly cost
+                    yearly:
+                      type: number
+                      description: Estimated yearly cost
+                    breakdown:
+                      type: object
+                      description: Cost breakdown by component
+                      properties:
+                        ec2Instances:
+                          type: object
+                          properties:
+                            monthly:
+                              type: number
+                            yearly:
+                              type: number
+                        eksControlPlane:
+                          type: object
+                          properties:
+                            monthly:
+                              type: number
+                            yearly:
+                              type: number
+                        natGateway:
+                          type: object
+                          properties:
+                            monthly:
+                              type: number
+                            yearly:
+                              type: number
+                        ebsVolumes:
+                          type: object
+                          properties:
+                            monthly:
+                              type: number
+                            yearly:
+                              type: number
+                        dataTransfer:
+                          type: object
+                          properties:
+                            monthly:
+                              type: number
+                            yearly:
+                              type: number
+                    lastUpdated:
+                      type: string
+                      description: Timestamp when cost estimate was last updated
