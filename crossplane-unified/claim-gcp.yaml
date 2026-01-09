@@ -1,0 +1,30 @@
+apiVersion: compute.example.com/v1alpha1
+kind: Cluster
+metadata:
+  name: my-unified-cluster
+  namespace: default
+spec:
+  parameters:
+    provider: gcp
+    region: us-west2
+    k8sVersion: "1.28"
+    nodeCount: 3
+    nodeInstanceType: e2-standard-2
+    networking:
+      vpcCidr: "10.0.0.0/16"
+      subnetCidrs: ["10.0.1.0/24", "10.0.2.0/24"]
+      serviceCidr: "10.96.0.0/12"
+      podCidr: "10.244.0.0/16"
+    addons:
+      cni:
+        enabled: true
+      csi:
+        enabled: true
+      dns:
+        enabled: true
+    tags:
+      Environment: production
+      Project: crossplane-unified
+      Owner: platform-team
+  writeConnectionSecretToRef:
+    name: unified-cluster-connection
