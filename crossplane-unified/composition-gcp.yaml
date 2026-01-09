@@ -1,0 +1,213 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xclusters-gcp.compute.example.com
+  labels:
+    provider: gcp
+    crossplane.io/claim-name: cluster
+spec:
+  compositeTypeRef:
+    apiVersion: compute.example.com/v1alpha1
+    kind: XCluster
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        patchSets:
+          - name: common-parameters
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.location
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.tags
+                toFieldPath: spec.forProvider.labels
+        resources:
+          # ===================
+          # VPC Network
+          # ===================
+          - name: vpc-network
+            base:
+              apiVersion: compute.gcp.upbound.io/v1beta1
+              kind: Network
+              spec:
+                forProvider:
+                  autoCreateSubnetworks: false
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-vpc"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.id
+                toFieldPath: status.networkId
+
+          # ===================
+          # Subnets
+          # ===================
+          - name: public-subnet
+            base:
+              apiVersion: compute.gcp.upbound.io/v1beta1
+              kind: Subnetwork
+              metadata:
+                labels:
+                  access: public
+              spec:
+                forProvider:
+                  ipCidrRange: "10.0.1.0/24"
+                  region: us-west2
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.subnetCidrs[0]
+                toFieldPath: spec.forProvider.ipCidrRange
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-public-subnet"
+              - type: FromCompositeFieldPath
+                fromFieldPath: vpc-network.status.atProvider.name
+                toFieldPath: spec.forProvider.network
+
+          - name: private-subnet
+            base:
+              apiVersion: compute.gcp.upbound.io/v1beta1
+              kind: Subnetwork
+              metadata:
+                labels:
+                  access: private
+              spec:
+                forProvider:
+                  ipCidrRange: "10.0.2.0/24"
+                  region: us-west2
+                  privateIpGoogleAccess: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.subnetCidrs[1]
+                toFieldPath: spec.forProvider.ipCidrRange
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-private-subnet"
+              - type: FromCompositeFieldPath
+                fromFieldPath: vpc-network.status.atProvider.name
+                toFieldPath: spec.forProvider.network
+
+          # ===================
+          # GKE Cluster
+          # ===================
+          - name: gke-cluster
+            base:
+              apiVersion: container.gcp.upbound.io/v1beta1
+              kind: Cluster
+              spec:
+                forProvider:
+                  location: us-west2-a
+                  removeDefaultNodePool: true
+                  initialNodeCount: 1
+                  networkSelector:
+                    matchControllerRef: true
+                  subnetworkSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                  ipAllocationPolicy:
+                    - useIpAliases: true
+                  masterAuthorizedNetworksConfig:
+                    - cidrBlocks: []
+                  privateClusterConfig:
+                    - enablePrivateNodes: true
+                      enablePrivateEndpoint: false
+                  addonsConfig:
+                    - httpLoadBalancing: {}
+                    - horizontalPodAutoscaling: {}
+                    - kubernetesDashboard: {}
+                      enabled: false
+                    - networkPolicyConfig: {}
+                      enabled: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-gke"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.serviceCidr
+                toFieldPath: spec.forProvider.ipAllocationPolicy[0].servicesIpv4CidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.podCidr
+                toFieldPath: spec.forProvider.ipAllocationPolicy[0].clusterIpv4CidrBlock
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.endpoint
+                toFieldPath: status.clusterEndpoint
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.name
+                toFieldPath: status.clusterName
+
+          # ===================
+          # GKE Node Pool
+          # ===================
+          - name: gke-node-pool
+            base:
+              apiVersion: container.gcp.upbound.io/v1beta1
+              kind: NodePool
+              spec:
+                forProvider:
+                  location: us-west2-a
+                  clusterSelector:
+                    matchControllerRef: true
+                  nodeCount: 3
+                  nodeConfig:
+                    - machineType: e2-standard-2
+                      diskSizeGb: 100
+                      diskType: pd-standard
+                      oauthScopes:
+                        - "https://www.googleapis.com/auth/cloud-platform"
+                      labels:
+                        environment: production
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-node-pool"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.nodeCount
+                toFieldPath: spec.forProvider.nodeCount
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.nodeInstanceType
+                toFieldPath: spec.forProvider.nodeConfig[0].machineType
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.name
+                toFieldPath: status.nodeGroupIds[0]
