@@ -949,3 +949,42 @@ spec:
                     matchControllerRef: true
                     matchLabels:
                       addon: ebs-csi
+
+          # ===================
+          # Cost Estimation
+          # ===================
+          - name: cost-estimation
+            base:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: cost-estimate
+              data:
+                currency: "USD"
+                monthly: "0"
+                yearly: "0"
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: data.region
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.nodeInstanceType
+                toFieldPath: data.instanceType
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.desiredNodeCount
+                toFieldPath: data.nodeCount
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.creationTimestamp
+                toFieldPath: data.lastUpdated
+              - type: ToCompositeFieldPath
+                fromFieldPath: data.monthly
+                toFieldPath: status.costEstimate.monthly
+              - type: ToCompositeFieldPath
+                fromFieldPath: data.yearly
+                toFieldPath: status.costEstimate.yearly
+              - type: ToCompositeFieldPath
+                fromFieldPath: data.currency
+                toFieldPath: status.costEstimate.currency
+              - type: ToCompositeFieldPath
+                fromFieldPath: data.lastUpdated
+                toFieldPath: status.costEstimate.lastUpdated
