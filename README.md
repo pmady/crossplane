@@ -10,6 +10,7 @@ A collection of **Crossplane 2.0** compositions for provisioning cloud infrastru
 |-------------|-------------|----------------|
 | [crossplane-eks](./crossplane-eks/) | Complete EKS cluster with VPC, subnets, and networking | AWS |
 | [crossplane-s3](./crossplane-s3/) | S3 bucket with versioning, encryption, and lifecycle policies | AWS |
+| [crossplane-unified](./crossplane-unified/) | Provider-agnostic cluster management for AWS, Azure, GCP | Multi-Cloud |
 
 ## Features
 
@@ -95,6 +96,45 @@ spec:
 - **IAM Integration** - Automatic IAM role creation for add-ons that need it
 - **Service Account IRSA** - IAM roles for service accounts (VPC CNI, EBS CSI)
 - **Conflict Resolution** - Automatic conflict resolution for add-on updates
+
+### Multi-Cloud Provider Support
+
+The unified composition allows you to create clusters across different cloud providers using the same API:
+
+| Provider | Service | Default Instance Type |
+|----------|---------|----------------------|
+| **AWS** | EKS | `t3.medium` |
+| **Azure** | AKS | `Standard_D2s_v3` |
+| **GCP** | GKE | `e2-standard-2` |
+
+#### Multi-Cloud Configuration Example
+
+```yaml
+apiVersion: compute.example.com/v1alpha1
+kind: Cluster
+metadata:
+  name: my-unified-cluster
+spec:
+  parameters:
+    provider: aws  # Change to azure or gcp
+    region: us-west-2
+    nodeCount: 3
+    networking:
+      vpcCidr: "10.0.0.0/16"
+      subnetCidrs: ["10.0.1.0/24", "10.0.2.0/24"]
+    tags:
+      Environment: production
+```
+
+#### Provider Selection
+
+Simply change the `provider` parameter to switch between cloud providers:
+
+- `aws` - Creates EKS cluster with VPC, subnets, and node groups
+- `azure` - Creates AKS cluster with resource group, VNet, and node pools  
+- `gcp` - Creates GKE cluster with VPC network and node pools
+
+All other parameters remain the same, providing a consistent API across clouds.
 
 ## Project Structure
 
