@@ -1,0 +1,133 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: xclusters.compute.example.com
+spec:
+  group: compute.example.com
+  names:
+    kind: XCluster
+    plural: xclusters
+  claimNames:
+    kind: Cluster
+    plural: clusters
+  connectionSecretKeys:
+    - kubeconfig
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  description: Cluster configuration parameters
+                  properties:
+                    provider:
+                      type: string
+                      description: Cloud provider (aws, azure, gcp)
+                      enum: ["aws", "azure", "gcp"]
+                      default: "aws"
+                    region:
+                      type: string
+                      description: Cloud region for the cluster
+                      default: "us-west-2"
+                    k8sVersion:
+                      type: string
+                      description: Kubernetes version
+                      default: "1.28"
+                    nodeCount:
+                      type: integer
+                      description: Number of worker nodes
+                      default: 3
+                    nodeInstanceType:
+                      type: string
+                      description: Instance type for worker nodes
+                      default: "Standard_D2s_v3"
+                    networking:
+                      type: object
+                      description: Network configuration
+                      properties:
+                        vpcCidr:
+                          type: string
+                          description: VPC/VNet CIDR block
+                          default: "10.0.0.0/16"
+                        subnetCidrs:
+                          type: array
+                          description: Subnet CIDR blocks
+                          items:
+                            type: string
+                          default: ["10.0.1.0/24", "10.0.2.0/24"]
+                        serviceCidr:
+                          type: string
+                          description: Kubernetes service CIDR
+                          default: "10.96.0.0/12"
+                        podCidr:
+                          type: string
+                          description: Kubernetes pod CIDR
+                          default: "10.244.0.0/16"
+                    addons:
+                      type: object
+                      description: Cluster add-ons configuration
+                      properties:
+                        cni:
+                          type: object
+                          description: Container Network Interface add-on
+                          properties:
+                            enabled:
+                              type: boolean
+                              default: true
+                            version:
+                              type: string
+                        csi:
+                          type: object
+                          description: Container Storage Interface add-on
+                          properties:
+                            enabled:
+                              type: boolean
+                              default: true
+                            version:
+                              type: string
+                        dns:
+                          type: object
+                          description: DNS add-on
+                          properties:
+                            enabled:
+                              type: boolean
+                              default: true
+                            version:
+                              type: string
+                    tags:
+                      type: object
+                      description: Resource tags
+                      additionalProperties:
+                        type: string
+                      default:
+                        Environment: production
+                        Project: crossplane-composition
+                  required:
+                    - provider
+                    - region
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                clusterEndpoint:
+                  type: string
+                  description: Cluster API endpoint
+                clusterName:
+                  type: string
+                  description: Name of the cluster
+                networkId:
+                  type: string
+                  description: Network/VPC ID
+                nodeGroupIds:
+                  type: array
+                  description: Node group IDs
+                  items:
+                    type: string
