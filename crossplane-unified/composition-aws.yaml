@@ -1,0 +1,225 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xclusters-aws.compute.example.com
+  labels:
+    provider: aws
+    crossplane.io/claim-name: cluster
+spec:
+  compositeTypeRef:
+    apiVersion: compute.example.com/v1alpha1
+    kind: XCluster
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        patchSets:
+          - name: common-parameters
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.region
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.tags
+                toFieldPath: spec.forProvider.tags
+        resources:
+          # ===================
+          # VPC
+          # ===================
+          - name: vpc
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: VPC
+              spec:
+                forProvider:
+                  cidrBlock: 10.0.0.0/16
+                  enableDnsHostnames: true
+                  enableDnsSupport: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.vpcCidr
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-vpc"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.id
+                toFieldPath: status.networkId
+
+          # ===================
+          # Internet Gateway
+          # ===================
+          - name: internet-gateway
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: InternetGateway
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-igw"
+
+          # ===================
+          # Subnets
+          # ===================
+          - name: public-subnet-1
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Subnet
+              metadata:
+                labels:
+                  access: public
+                  zone: a
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  mapPublicIpOnLaunch: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.subnetCidrs[0]
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.availabilityZone
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%sa"
+
+          - name: private-subnet-1
+            base:
+              apiVersion: ec2.aws.upbound.io/v1beta1
+              kind: Subnet
+              metadata:
+                labels:
+                  access: private
+                  zone: a
+              spec:
+                forProvider:
+                  vpcIdSelector:
+                    matchControllerRef: true
+                  mapPublicIpOnLaunch: false
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.networking.subnetCidrs[1]
+                toFieldPath: spec.forProvider.cidrBlock
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.region
+                toFieldPath: spec.forProvider.availabilityZone
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%sa"
+
+          # ===================
+          # EKS Cluster
+          # ===================
+          - name: eks-cluster
+            base:
+              apiVersion: eks.aws.upbound.io/v1beta1
+              kind: Cluster
+              spec:
+                forProvider:
+                  roleArnSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-cluster
+                  vpcConfig:
+                    - endpointPrivateAccess: true
+                      endpointPublicAccess: true
+                      subnetIdSelector:
+                        matchControllerRef: true
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.k8sVersion
+                toFieldPath: spec.forProvider.version
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-eks-cluster"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.endpoint
+                toFieldPath: status.clusterEndpoint
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.name
+                toFieldPath: status.clusterName
+
+          # ===================
+          # EKS Node Group
+          # ===================
+          - name: eks-node-group
+            base:
+              apiVersion: eks.aws.upbound.io/v1beta1
+              kind: NodeGroup
+              spec:
+                forProvider:
+                  clusterNameSelector:
+                    matchControllerRef: true
+                  nodeRoleArnSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      role: eks-node
+                  subnetIdSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      access: private
+                  scalingConfig:
+                    - desiredSize: 3
+                      maxSize: 5
+                      minSize: 1
+                  instanceTypes:
+                    - t3.medium
+            patches:
+              - type: PatchSet
+                patchSetName: common-parameters
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.nodeInstanceType
+                toFieldPath: spec.forProvider.instanceTypes[0]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.nodeCount
+                toFieldPath: spec.forProvider.scalingConfig[0].desiredSize
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-eks-node-group"
+              - type: ToCompositeFieldPath
+                fromFieldPath: status.atProvider.nodegroupName
+                toFieldPath: status.nodeGroupIds[0]
