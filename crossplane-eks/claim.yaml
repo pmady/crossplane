@@ -16,5 +16,29 @@ spec:
     desiredNodeCount: 2
     minNodeCount: 1
     maxNodeCount: 5
+    addons:
+      vpcCni:
+        enabled: true
+        version: "v1.12.6-eksbuild.1"
+        configuration:
+          warmPodTarget: 2
+          warmIpTarget: 2
+      coreDns:
+        enabled: true
+        version: "v1.10.1-eksbuild.6"
+        configuration:
+          computeType: "EC2"
+      kubeProxy:
+        enabled: true
+        version: "v1.28.1-eksbuild.1"
+        configuration:
+          mode: "iptables"
+          iptables:
+            masqueradeAll: false
+      ebsCsiDriver:
+        enabled: true
+        version: "v1.26.1-eksbuild.1"
+        configuration:
+          mountOptions: "nfsvers=4.1"
   writeConnectionSecretToRef:
     name: eks-cluster-connection

@@ -16,6 +16,7 @@ A collection of **Crossplane 2.0** compositions for provisioning cloud infrastru
 - **Crossplane 2.0** - Uses Pipeline mode with `function-patch-and-transform`
 - **Production-ready** - Includes VPC, public/private subnets, NAT Gateway, and proper IAM roles
 - **Configurable** - Parameterized for easy customization
+- **EKS Add-ons Management** - Supports VPC CNI, CoreDNS, kube-proxy, and EBS CSI driver
 - **CI/CD Ready** - GitHub Actions workflow for testing and package publishing
 
 ## Quick Start
@@ -38,6 +39,62 @@ kubectl apply -f crossplane-eks/composition.yaml
 # Create an EKS cluster
 kubectl apply -f crossplane-eks/claim.yaml
 ```
+
+### EKS Add-ons Configuration
+
+The EKS composition supports managing the following add-ons:
+
+| Add-on | Description | Default Version |
+|--------|-------------|-----------------|
+| **VPC CNI** | Container networking interface for pod networking | `v1.12.6-eksbuild.1` |
+| **CoreDNS** | DNS discovery service for Kubernetes | `v1.10.1-eksbuild.6` |
+| **kube-proxy** | Network proxy for maintaining network rules | `v1.28.1-eksbuild.1` |
+| **EBS CSI Driver** | Container Storage Interface for EBS volumes | `v1.26.1-eksbuild.1` |
+
+#### Add-on Configuration Example
+
+```yaml
+apiVersion: aws.example.com/v1alpha1
+kind: EKSCluster
+metadata:
+  name: my-eks-cluster
+spec:
+  parameters:
+    region: us-west-2
+    # ... other cluster parameters
+    addons:
+      vpcCni:
+        enabled: true
+        version: "v1.12.6-eksbuild.1"
+        configuration:
+          warmPodTarget: 2
+          warmIpTarget: 2
+      coreDns:
+        enabled: true
+        version: "v1.10.1-eksbuild.6"
+        configuration:
+          computeType: "EC2"
+      kubeProxy:
+        enabled: true
+        version: "v1.28.1-eksbuild.1"
+        configuration:
+          mode: "iptables"
+          iptables:
+            masqueradeAll: false
+      ebsCsiDriver:
+        enabled: true
+        version: "v1.26.1-eksbuild.1"
+        configuration:
+          mountOptions: "nfsvers=4.1"
+```
+
+#### Add-on Features
+
+- **Configurable Versions** - Specify exact add-on versions
+- **Custom Configuration** - Pass configuration values to add-ons
+- **IAM Integration** - Automatic IAM role creation for add-ons that need it
+- **Service Account IRSA** - IAM roles for service accounts (VPC CNI, EBS CSI)
+- **Conflict Resolution** - Automatic conflict resolution for add-on updates
 
 ## Project Structure
 

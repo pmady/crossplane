@@ -702,3 +702,250 @@ spec:
                     string:
                       type: Format
                       fmt: "%s-eks-node-group"
+
+          # ===================
+          # EKS Add-ons
+          # ===================
+          - name: vpc-cni-addon
+            base:
+              apiVersion: eks.aws.upbound.io/v1alpha1
+              kind: Addon
+              spec:
+                forProvider:
+                  addonName: vpc-cni
+                  clusterNameSelector:
+                    matchControllerRef: true
+                  resolveConflicts: OVERWRITE
+                  serviceAccountRoleArnSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      addon: vpc-cni
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.vpcCni.enabled
+                toFieldPath: spec.forProvider
+                transforms:
+                  - type: map
+                    map:
+                      type: string
+                      string:
+                        fmt: "true"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.vpcCni.version
+                toFieldPath: spec.forProvider.addonVersion
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.vpcCni.configuration
+                toFieldPath: spec.forProvider.configurationValues
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s"
+
+          # ===================
+          # VPC CNI Service Account Role
+          # ===================
+          - name: vpc-cni-iam-role
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: Role
+              metadata:
+                labels:
+                  addon: vpc-cni
+              spec:
+                forProvider:
+                  assumeRolePolicy: |
+                    {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Principal": {
+                            "Federated": "arn:aws:iam::{{ .metadata.annotations.crossplane.io/external-name }}:oidc-provider/oidc.eks.{{ .spec.forProvider.region }}.amazonaws.com/id/{{ index .metadata.annotations "eks.amazonaws.com/issuer-arn" }}"
+                          },
+                          "Action": "sts:AssumeRoleWithWebIdentity",
+                          "Condition": {
+                            "StringEquals": {
+                              "oidc.eks.{{ .spec.forProvider.region }}.amazonaws.com/id/{{ index .metadata.annotations "eks.amazonaws.com/issuer-arn" }}:sub": "system:serviceaccount:kube-system:aws-node"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  tags:
+                    Name: vpc-cni-irsa
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-vpc-cni-irsa"
+
+          - name: vpc-cni-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      addon: vpc-cni
+
+          - name: coredns-addon
+            base:
+              apiVersion: eks.aws.upbound.io/v1alpha1
+              kind: Addon
+              spec:
+                forProvider:
+                  addonName: coredns
+                  clusterNameSelector:
+                    matchControllerRef: true
+                  resolveConflicts: OVERWRITE
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.coreDns.enabled
+                toFieldPath: spec.forProvider
+                transforms:
+                  - type: map
+                    map:
+                      type: string
+                      string:
+                        fmt: "true"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.coreDns.version
+                toFieldPath: spec.forProvider.addonVersion
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.coreDns.configuration
+                toFieldPath: spec.forProvider.configurationValues
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s"
+
+          - name: kube-proxy-addon
+            base:
+              apiVersion: eks.aws.upbound.io/v1alpha1
+              kind: Addon
+              spec:
+                forProvider:
+                  addonName: kube-proxy
+                  clusterNameSelector:
+                    matchControllerRef: true
+                  resolveConflicts: OVERWRITE
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.kubeProxy.enabled
+                toFieldPath: spec.forProvider
+                transforms:
+                  - type: map
+                    map:
+                      type: string
+                      string:
+                        fmt: "true"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.kubeProxy.version
+                toFieldPath: spec.forProvider.addonVersion
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.kubeProxy.configuration
+                toFieldPath: spec.forProvider.configurationValues
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s"
+
+          - name: ebs-csi-addon
+            base:
+              apiVersion: eks.aws.upbound.io/v1alpha1
+              kind: Addon
+              spec:
+                forProvider:
+                  addonName: aws-ebs-csi-driver
+                  clusterNameSelector:
+                    matchControllerRef: true
+                  resolveConflicts: OVERWRITE
+                  serviceAccountRoleArnSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      addon: ebs-csi
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.ebsCsiDriver.enabled
+                toFieldPath: spec.forProvider
+                transforms:
+                  - type: map
+                    map:
+                      type: string
+                      string:
+                        fmt: "true"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.ebsCsiDriver.version
+                toFieldPath: spec.forProvider.addonVersion
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.addons.ebsCsiDriver.configuration
+                toFieldPath: spec.forProvider.configurationValues
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s"
+
+          # ===================
+          # EBS CSI Driver Service Account Role
+          # ===================
+          - name: ebs-csi-iam-role
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: Role
+              metadata:
+                labels:
+                  addon: ebs-csi
+              spec:
+                forProvider:
+                  assumeRolePolicy: |
+                    {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Principal": {
+                            "Federated": "arn:aws:iam::{{ .metadata.annotations.crossplane.io/external-name }}:oidc-provider/oidc.eks.{{ .spec.forProvider.region }}.amazonaws.com/id/{{ index .metadata.annotations "eks.amazonaws.com/issuer-arn" }}"
+                          },
+                          "Action": "sts:AssumeRoleWithWebIdentity",
+                          "Condition": {
+                            "StringEquals": {
+                              "oidc.eks.{{ .spec.forProvider.region }}.amazonaws.com/id/{{ index .metadata.annotations "eks.amazonaws.com/issuer-arn" }}:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  tags:
+                    Name: ebs-csi-irsa
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.forProvider.tags.Name
+                transforms:
+                  - type: string
+                    string:
+                      type: Format
+                      fmt: "%s-ebs-csi-irsa"
+
+          - name: ebs-csi-policy-attachment
+            base:
+              apiVersion: iam.aws.upbound.io/v1beta1
+              kind: RolePolicyAttachment
+              spec:
+                forProvider:
+                  policyArn: arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+                  roleSelector:
+                    matchControllerRef: true
+                    matchLabels:
+                      addon: ebs-csi

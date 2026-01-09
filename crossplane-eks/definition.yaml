@@ -71,6 +71,102 @@ spec:
                       type: integer
                       description: Maximum number of worker nodes
                       default: 5
+                    addons:
+                      type: object
+                      description: EKS add-ons configuration
+                      properties:
+                        vpcCni:
+                          type: object
+                          description: VPC CNI add-on configuration
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Enable VPC CNI add-on
+                              default: true
+                            version:
+                              type: string
+                              description: VPC CNI add-on version
+                              default: "v1.12.6-eksbuild.1"
+                            configuration:
+                              type: object
+                              description: VPC CNI configuration parameters
+                              properties:
+                                warmPodTarget:
+                                  type: integer
+                                  description: Number of warm pods to target
+                                  default: 2
+                                warmIpTarget:
+                                  type: integer
+                                  description: Number of warm IPs to target
+                                  default: 2
+                        coreDns:
+                          type: object
+                          description: CoreDNS add-on configuration
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Enable CoreDNS add-on
+                              default: true
+                            version:
+                              type: string
+                              description: CoreDNS add-on version
+                              default: "v1.10.1-eksbuild.6"
+                            configuration:
+                              type: object
+                              description: CoreDNS configuration parameters
+                              properties:
+                                computeType:
+                                  type: string
+                                  description: Compute type for CoreDNS
+                                  default: "EC2"
+                        kubeProxy:
+                          type: object
+                          description: kube-proxy add-on configuration
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Enable kube-proxy add-on
+                              default: true
+                            version:
+                              type: string
+                              description: kube-proxy add-on version
+                              default: "v1.28.1-eksbuild.1"
+                            configuration:
+                              type: object
+                              description: kube-proxy configuration parameters
+                              properties:
+                                mode:
+                                  type: string
+                                  description: Proxy mode
+                                  default: "iptables"
+                                iptables:
+                                  type: object
+                                  description: iptables configuration
+                                  properties:
+                                    masqueradeAll:
+                                      type: boolean
+                                      description: Masquerade all traffic
+                                      default: false
+                        ebsCsiDriver:
+                          type: object
+                          description: EBS CSI driver add-on configuration
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Enable EBS CSI driver add-on
+                              default: true
+                            version:
+                              type: string
+                              description: EBS CSI driver add-on version
+                              default: "v1.26.1-eksbuild.1"
+                            configuration:
+                              type: object
+                              description: EBS CSI driver configuration parameters
+                              properties:
+                                mountOptions:
+                                  type: string
+                                  description: Mount options for EBS volumes
+                                  default: "nfsvers=4.1"
                   required:
                     - region
               required:
