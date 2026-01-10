@@ -63,7 +63,24 @@ status:
 
 ### 2. Manual Cost Calculation
 
-You can also calculate costs manually using the provided Python script:
+#### Installation
+
+The cost calculator uses only Python standard library (no external dependencies required):
+
+```bash
+cd crossplane-eks
+python3 cost-calculator.py
+```
+
+**Optional**: If you want to use the YAML pricing format, install PyYAML:
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Basic Usage
+
+Run the calculator directly:
 
 ```bash
 cd crossplane-eks
@@ -86,6 +103,17 @@ Cost Breakdown:
   ebs_volumes: $24.00/month
   data_transfer: $9.00/month
 ```
+
+#### Running Examples
+
+Run the comprehensive example script:
+
+```bash
+cd crossplane-eks
+python3 examples/estimate-cost.py
+```
+
+This will show cost estimates for multiple cluster configurations including development, production, high-performance, and EU region examples.
 
 ### 3. Custom Cost Calculation
 
