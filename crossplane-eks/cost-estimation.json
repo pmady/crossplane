@@ -1,0 +1,105 @@
+{
+  "ec2_pricing": {
+    "us-west-2": {
+      "t3.micro": 0.0104,
+      "t3.small": 0.0208,
+      "t3.medium": 0.0416,
+      "t3.large": 0.0832,
+      "t3.xlarge": 0.1664,
+      "t3.2xlarge": 0.3328,
+      "m5.large": 0.096,
+      "m5.xlarge": 0.192,
+      "m5.2xlarge": 0.384,
+      "m5.4xlarge": 0.768,
+      "c5.large": 0.085,
+      "c5.xlarge": 0.17,
+      "c5.2xlarge": 0.34,
+      "c5.4xlarge": 0.68
+    },
+    "us-east-1": {
+      "t3.micro": 0.0104,
+      "t3.small": 0.0208,
+      "t3.medium": 0.0416,
+      "t3.large": 0.0832,
+      "t3.xlarge": 0.1664,
+      "t3.2xlarge": 0.3328,
+      "m5.large": 0.096,
+      "m5.xlarge": 0.192,
+      "m5.2xlarge": 0.384,
+      "m5.4xlarge": 0.768,
+      "c5.large": 0.085,
+      "c5.xlarge": 0.17,
+      "c5.2xlarge": 0.34,
+      "c5.4xlarge": 0.68
+    },
+    "eu-west-1": {
+      "t3.micro": 0.0112,
+      "t3.small": 0.0224,
+      "t3.medium": 0.0448,
+      "t3.large": 0.0896,
+      "t3.xlarge": 0.1792,
+      "t3.2xlarge": 0.3584,
+      "m5.large": 0.104,
+      "m5.xlarge": 0.208,
+      "m5.2xlarge": 0.416,
+      "m5.4xlarge": 0.832,
+      "c5.large": 0.091,
+      "c5.xlarge": 0.182,
+      "c5.2xlarge": 0.364,
+      "c5.4xlarge": 0.728
+    }
+  },
+  "eks_pricing": {
+    "us-west-2": 0.10,
+    "us-east-1": 0.10,
+    "eu-west-1": 0.12
+  },
+  "nat_gateway_pricing": {
+    "us-west-2": {
+      "hourly": 0.045,
+      "data_processing_per_gb": 0.045
+    },
+    "us-east-1": {
+      "hourly": 0.045,
+      "data_processing_per_gb": 0.045
+    },
+    "eu-west-1": {
+      "hourly": 0.045,
+      "data_processing_per_gb": 0.045
+    }
+  },
+  "ebs_pricing": {
+    "us-west-2": {
+      "gp3": 0.08,
+      "gp2": 0.10,
+      "io1": 0.125
+    },
+    "us-east-1": {
+      "gp3": 0.08,
+      "gp2": 0.10,
+      "io1": 0.125
+    },
+    "eu-west-1": {
+      "gp3": 0.096,
+      "gp2": 0.119,
+      "io1": 0.148
+    }
+  },
+  "data_transfer_pricing": {
+    "us-west-2": {
+      "internet": 0.09
+    },
+    "us-east-1": {
+      "internet": 0.09
+    },
+    "eu-west-1": {
+      "internet": 0.09
+    }
+  },
+  "default_assumptions": {
+    "monthly_hours": 730,
+    "ebs_volume_size_gb": 50,
+    "data_transfer_gb_per_month": 100,
+    "nat_gateway_data_gb_per_month": 50
+  }
+}
