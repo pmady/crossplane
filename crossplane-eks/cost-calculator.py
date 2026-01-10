@@ -4,14 +4,19 @@ Cost Estimation Calculator for EKS Clusters
 This module provides cost calculation functions for AWS EKS cluster components.
 """
 
-import yaml
+import json
 from typing import Dict, Any, Optional
+import os
 
 class CostEstimator:
-    def __init__(self, pricing_file: str = "cost-estimation.yaml"):
+    def __init__(self, pricing_file: str = "cost-estimation.json"):
         """Initialize cost estimator with pricing data."""
-        with open(pricing_file, 'r') as f:
-            self.pricing = yaml.safe_load(f)
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        pricing_path = os.path.join(script_dir, pricing_file)
+        
+        with open(pricing_path, 'r') as f:
+            self.pricing = json.load(f)
     
     def calculate_ec2_cost(self, instance_type: str, node_count: int, region: str) -> Dict[str, float]:
         """Calculate EC2 instance costs."""
